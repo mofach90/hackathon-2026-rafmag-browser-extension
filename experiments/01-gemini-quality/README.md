@@ -113,13 +113,42 @@ False positives (Gemini flagged a range that isn't actually a break):
 
 - Language quality is good — Gemini quoted specific Derja phrases (`يلا شباب نتقابلو غدوة في الزابينغ`, `ما تبعدوش`) and structured output as requested. The original concern about Tunisian-dialect performance does not appear to be the bottleneck for this task.
 
+### Run 2 — gemini-3.1-pro-preview, low resolution, full episode, `--output show`
+
+After [experiment 02](../02-show-grammar/) produced [`grammar.md`](../02-show-grammar/grammar.md), the prompt in `test.py` was rewritten with the empirical break-entry / break-return phrases and the "WHAT IS NOT A BREAK" trap list. Re-ran on the same video as run 1, this time on the full episode and asking for show-content ranges instead of break ranges.
+
+- URL: `https://www.youtube.com/watch?v=kEjaNLGr4U0`
+- Command: `python test.py "<url>" --model gemini-3.1-pro-preview --output show --max-output-tokens 16000`
+- Tokens: prompt = 873,280 / output = 911 / total ≈ 883,877. **~87% of the 1M-token context** for a single full-episode call at low resolution.
+- Wall-clock: 254s.
+
+**What Gemini returned:** 11 `showSegments` covering 18:27 onward.
+
+**What we have ground truth for** (from run 1, same video): the real ad break is at absolute **29:03 – 33:53**. Gemini's `showSegments` imply the break gap is **28:38 – 33:29**.
+
+| Edge      | Gemini | Reality | Off-by                                              |
+|-----------|--------|---------|-----------------------------------------------------|
+| Break start | 28:38 | 29:03  | **25s early** — extension would skip 25s of show    |
+| Break end   | 33:29 | 33:53  | **24s early** — extension would resume into 24s of break audio |
+
+That's outside the ±15s decision rule.
+
+**Red flag — periodic fabrication.** From segment 2 onward the output becomes implausibly regular: every show segment is 385–387s, every gap is exactly 137s or 291s, and the `evidence` strings repeat verbatim across alternating segments. Real radio doesn't run on a metronome — the grammar work showed the show has one ~15–20 min mega break, not a fixed cadence. The most plausible explanation: at 87% of the token budget on a 2h+ video, the model loses fidelity past a certain point and pattern-completes a synthetic schedule rather than continuing to attend to the audio. Where ground truth exists (the early portion of the video) the segmentation is roughly right but boundary-loose; where ground truth doesn't exist (the later portion) the output looks fabricated.
+
+**Implications:**
+
+- The grammar-grounded prompt did remove the run-1 columnist false positive in the area we have ground truth for. That's a real improvement.
+- Boundary precision is still off (~25s vs ±15s target).
+- **Full-episode at low resolution is not a viable invocation strategy** for this video length. A chunked-clip strategy (already implemented in `test.py` via `--chunk-seconds` / `--overlap-seconds`) is the next thing to try.
+
+**User decision (Round 3):** treat this as good enough to **proceed with MVP scope decisions** (so brainstorming could move forward) — not as a final validation of the Gemini path. ADR 0001 stays **Proposed**. A clean validation run on a manually annotated episode (`yaeWOrjiDRM`, with 7 ground-truth break ranges) is the next test that should flip the ADR to **Accepted** or trigger the Whisper fallback.
+
 ## Conclusion
 
-**Status: inconclusive — the language layer works, the boundary layer needs more iteration.** Possible next moves:
+**Status: inconclusive — the language and grammar layers work, the boundary layer is still ±25s and full-episode runs degrade past ~80% of the token budget.** Open next moves:
 
-- **Prompt refinement** — explicitly instruct Gemini that (a) consecutive promos with brief jingles between them are *one* break, (b) voice shifts to a co-host / columnist are NOT breaks, (c) breaks can run several minutes and should be reported as a single contiguous range.
-- **Run on the full episode**, not a 10-minute clip — more context might help Gemini distinguish recurring co-host segments from ad breaks.
-- **Try `gemini-2.5-pro`** — same input, larger model.
-- **Fall back to the Whisper plan** — `audio → Whisper transcript → Gemini on full transcript`. Boundary reasoning over text might be more controllable than over a 10-minute video chunk.
+- **Chunked-clip strategy on `yaeWOrjiDRM`** — feed 30-min windows with 5-min overlap, merge ranges, score against the manually annotated 7 break ranges.
+- **`gemini-2.5-pro` or `gemini-3.1-pro-preview` on a single short clip with tight ground truth** — establish a per-clip accuracy floor before scaling up.
+- **Fall back to the Whisper plan** if chunked clips can't get inside ±15s — `audio → Whisper transcript → Gemini on full transcript`. Boundary reasoning over text is more controllable than over multi-hour low-res video.
 
-Decision deferred until at least one of the above is tried.
+Decision deferred until a chunked-clip run on `yaeWOrjiDRM` is scored.

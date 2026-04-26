@@ -64,8 +64,14 @@ Sends all fetched transcripts in one Gemini call, writes the result to [`grammar
 
 ## Result
 
-> _(populated by `analyze.py` into `grammar.md`)_
+See [`grammar.md`](./grammar.md) (populated by `analyze.py` from 10/10 successfully fetched transcripts). Headline findings:
+
+- **4 break-entry phrases** — `فاصل ثم نواصل` (10/10 episodes), `الاخبار ثم نعود` (10/10), `ترتيحه صغيره/العاده بالموزيكا` (~8/10), `فاصل صغير` / `ما تبعدوش` (~9/10).
+- **3 break-return phrases** — `مرحبا مرحبا رجعنا لكم في ساعتنا الثانيه` (10/10), `مرحبا بكم في الجزء الاخير من حلقتنا لليوم` (10/10), explicit time announcements (10/10).
+- **2 columnist segments** that look like breaks but aren't — Zapping (Rami Fourati, ~3–5 min, near top of show) and Box News / بوكس نيوز (Jihan Sallini, ~5–10 min, start of second hour).
+- **Episode skeleton**: Intro → Zapping → Break → Trend → Live Ads → Mega Break (~15–20 min station news + sports) → Second Hour → Box News → Break → Panel → Break → Quiz → Outro. Typically 4–6 breaks per episode.
+- **3 false-positive traps**: live in-show sponsor reads (Ooredoo, Volkswagen giveaways), the mega break's professionally-read station bulletin (still a noisy break the listener wants skipped), Zapping replay montages that quote the moderator saying "فاصل".
 
 ## Conclusion
 
-> _(once we've used the grammar to rewrite test.py's prompt and re-run experiment 01)_
+The grammar produced a usable, much more specific prompt than the speculative one from run 1. It was folded back into [`../01-gemini-quality/test.py`](../01-gemini-quality/test.py) under `PROMPT_TEMPLATE` + `SHOW_OUTPUT_CONTEXT` (with a parallel `BREAK_OUTPUT_CONTEXT` for the break-detection mode). Experiment 01 is the validation of whether the rewritten prompt actually fixes the run-1 failure modes — see its README for run results.

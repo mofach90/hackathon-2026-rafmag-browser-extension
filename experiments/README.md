@@ -20,5 +20,5 @@ If an ADR depends on an empirical assumption (e.g. *"Gemini can detect ad breaks
 
 | #    | Title                                                           | Status      |
 |------|-----------------------------------------------------------------|-------------|
-| 0001 | [Gemini ad-break detection quality](./01-gemini-quality/)      | 🔄 run 1 done (run 2 prompt rewritten with grammar; ready to execute) |
+| 0001 | [Gemini ad-break detection quality](./01-gemini-quality/)      | 🔄 runs 1 & 2 done — inconclusive; chunked-clip run on annotated episode `yaeWOrjiDRM` is the next test |
 | 0002 | [Show-grammar analysis](./02-show-grammar/)                    | ✅ done — see [`grammar.md`](./02-show-grammar/grammar.md). 10/10 transcripts usable. |

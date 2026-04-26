@@ -14,7 +14,7 @@
 
 - The show already exists, the recordings already exist, the audience already exists.
 - The friction is real, recurring (every episode), and per-episode it happens multiple times.
-- It's a perfect hackathon-scale problem: well-defined, single user flow, browser-only — no backend strictly required.
+- It's a perfect hackathon-scale problem: well-defined, single user flow, narrow surface area. (We do end up with a thin backend for the cached break detection, but it's tiny and per-episode.)
 
 ## What happens if nobody solves this
 

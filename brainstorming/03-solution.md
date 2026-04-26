@@ -25,30 +25,32 @@ The extension takes the show's name to make its purpose unmistakable: it is *the
 Detection is **Gemini-driven, video-native, and cached**:
 
 1. **Gemini ingests the YouTube URL directly.** Gemini's video-understanding API accepts a `file_data.file_uri` pointing at a public YouTube watch URL — no audio extraction, no separate transcription step required. The model can return timestamps in `HH:MM:SS` format directly.
-2. **One prompt does both jobs.** We prompt Gemini in Tunisian-dialect context to find the moderator's break-marker phrases (e.g. *"now we'll go for a break"*, *"we're back"*) and return a JSON array of `{start, end, type}` ranges.
-3. **Cache the result.** Store those timestamps in **Firestore**, keyed by the YouTube video ID. The Gemini call runs **exactly once per episode**, never per viewer or per refresh.
-4. **Extension consumes the cache.** When a `rafmag` episode loads in the user's browser, the extension queries Firestore (or a thin backend endpoint) with the video ID, gets the cached `{start, end}` ranges, and uses them to drive auto-skips on the YouTube `<video>` element during playback.
+2. **The prompt is grammar-grounded.** We use the prompt living in [`experiments/01-gemini-quality/test.py`](../experiments/01-gemini-quality/test.py) (`--output show` mode), which was distilled from the empirical analysis of 10 real episodes in [experiment 02](../experiments/02-show-grammar/grammar.md). It returns the **show-content ranges** (the parts to keep), not the break ranges to skip.
+3. **Cache the result.** Store the show-content ranges in **Firestore**, keyed by the YouTube video ID, under `episodes/{videoId}.showSegments`. The Gemini call runs **exactly once per episode**, never per viewer or per refresh. See [ADR 0002](../adr/0002-data-storage.md).
+4. **Extension consumes the cache through a small read endpoint.** When a `rafmag` episode loads in the user's browser, the extension calls a Cloud Function `GET /episode/{videoId}` that reads the document with the Admin SDK. Credentials never leave the server. The extension uses the returned `showSegments` to auto-seek the YouTube `<video>` element to the first segment and silently skip every gap.
 
 ```
    ┌─────────────────────────────────────────────────────────┐
    │  ONE-TIME, PER EPISODE (server side)                    │
    │                                                          │
-   │  YouTube URL ──► Gemini (video understanding)            │
-   │              prompt: "find ad-break ranges in derja"    │
-   │              ──► [{start,end,type}, …]                  │
+   │  YouTube URL ──► Gemini (video understanding)           │
+   │              prompt: grammar-grounded, --output show    │
+   │              ──► { showSegments: [{startSec,endSec}, …]}│
    │                                                          │
    │              ──► Firestore (episodes/{videoId})         │
    └─────────────────────────────────────────────────────────┘
                            │
-                           ▼  (lookup by videoId)
+                           ▼  (GET /episode/{videoId})
    ┌─────────────────────────────────────────────────────────┐
    │  EVERY VIEWER, EVERY PLAYBACK (browser side)            │
    │                                                          │
-   │  Extension on YouTube page ──► fetch ranges              │
-   │      ──► auto-seek past each range when playback         │
-   │          enters it                                       │
+   │  Extension on YouTube page ──► Cloud Function read       │
+   │      ──► auto-seek to first showSegment, then silently  │
+   │          skip every gap between segments                │
    └─────────────────────────────────────────────────────────┘
 ```
+
+> **MVP note**: for the hackathon, the Gemini call is invoked by a one-shot local backfill script (run once before demo day to populate the last ~month of episodes) — *not* by an event-driven pipeline. The eventual trigger flow described below is documented in [ADR 0001](../adr/0001-backend-stack.md) but isn't built yet. See [`04-scope.md`](./04-scope.md).
 
 ### Quality risk and fallback
 
