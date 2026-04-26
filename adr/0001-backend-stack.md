@@ -21,7 +21,7 @@ Constraints driving the decision:
 - **Junior dev (one person)** building, deploying, and operating it. Lower operational complexity > theoretical flexibility.
 - **Cadence**: ~1 execution per new episode (daily at most). Each run lasts a few minutes. Idle the rest of the time.
 - **Single-ecosystem benefit**: the chosen LLM is **Gemini**, which lives in Google Cloud. Staying in the same ecosystem cuts auth, billing, and console overhead.
-- **Cost ceiling**: should be ~$0 at hackathon scale.
+- **Cost**: parked for the MVP per [`brainstorming/05-constraints.md`](../brainstorming/05-constraints.md). We accept the per-episode Gemini cost (~$1–2/episode at the chosen model) for now and revisit after stable production usage. Cloud Functions / Firestore stay effectively free at our request volume.
 
 ## MVP vs eventual architecture
 
@@ -44,7 +44,7 @@ Build the backend on **Google Cloud, Firebase-flavored**, with this stack:
 
 - **Compute**: **Cloud Functions Gen 2** (Node.js or Python — TBD by language preference, not by capability). Triggered by HTTP (Cloud Scheduler hits it for the `actualEndTime` polling cycle, and a webhook endpoint receives PubSubHubbub notifications).
 - **Model**: **Gemini API** with the **video-understanding** capability. We pass the public YouTube URL via `file_data.file_uri` and prompt Gemini directly for `{start, end, type}` ranges in JSON. This collapses what would otherwise be two steps (transcribe with Whisper, then analyze with an LLM) into one model call.
-  - Model variant: start with **Gemini 2.5 Flash** for cost/latency; promote to **2.5 Pro** if Tunisian-dialect quality is insufficient on real episodes.
+  - Model variant: **`gemini-3.1-pro-preview`** for the MVP — that's what experiment 01 run 2 used and what the backfill script will call. Cheaper variants (`gemini-2.5-flash`, chunked-clip strategies, or Whisper + text-Gemini) become candidates once we have stable production data; see [`brainstorming/05-constraints.md`](../brainstorming/05-constraints.md).
 - **Scheduler**: **Cloud Scheduler** to run the `actualEndTime` poller every N minutes for any episode currently in the "waiting for archive" state.
 - **YouTube channel feed**: **PubSubHubbub** subscription pointing at a Cloud Functions HTTP endpoint to learn about new streams.
 - **Secrets**: **Secret Manager** for the Gemini API key and the YouTube Data API key.
@@ -81,7 +81,7 @@ Cloudflare Workers and Vercel are excellent serverless platforms, but Gemini, Fi
 - **One ecosystem, one billing line, one console.** Critical for solo operations.
 - **No Dockerfile, no GPU**: Cloud Functions Gen 2 deploys from source; no container expertise needed.
 - **Gemini collapses two steps into one**: no separate ASR service to operate, monitor, or pay for.
-- **Stays effectively free** at hackathon scale (Cloud Functions free tier covers our request volume; Gemini free tier covers our daily input).
+- **Cloud Functions / Firestore stay effectively free** at our request volume. The non-trivial cost is the Gemini call itself (~$1–2/episode on `gemini-3.1-pro-preview`), which is consciously parked until post-production review.
 - **Lock-in is mild**: the orchestrator is a few hundred lines of code; if we ever leave GCP, the migration is a weekend.
 
 ### Bad

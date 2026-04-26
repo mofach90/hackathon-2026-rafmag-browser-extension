@@ -46,7 +46,7 @@ episodes/{videoId}
   showSegments:   [{ startSec: number,
                      endSec:   number,
                      evidence: string }]       // evidence kept for debugging; extension ignores it
-  model:          string                       // e.g. "gemini-2.5-flash"
+  model:          string                       // e.g. "gemini-3.1-pro-preview"
   processedAt:    timestamp | null
   error:          string | null
   schemaVersion:  number                       // start at 1

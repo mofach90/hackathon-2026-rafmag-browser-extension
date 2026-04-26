@@ -11,8 +11,9 @@
 | **Background listening** | The user's actual mode of consumption: the show is playing on a laptop in another room while the user does other tasks. They are *not* watching the screen. | Round 1 |
 | **Transcript / transcription** | The text version of what's spoken in the video. Source of truth for break detection. Likely starts from YouTube's auto-generated captions. | Round 2 |
 | **Break marker phrase** | A Tunisian-dialect phrase the moderator says to enter or leave a break (e.g. *"now we'll go for a break"*, *"we're back"*). The LLM's job is to find these in the transcript. | Round 2 |
-| **Break range** | A `{start, end}` timestamp pair describing one ad/promo segment to skip in a given episode. | Round 2 |
-| **Episode cache** | The backend database that stores break ranges keyed by YouTube video ID. Lets the heavy LLM work happen exactly once per episode. | Round 2 |
+| **Break range** | A `{start, end}` timestamp pair describing one ad/promo segment to skip. The original framing — kept here for vocabulary, but the system actually stores the *complement* (see `showSegments`). | Round 2 |
+| **`showSegments`** | The list of `{startSec, endSec}` keep-ranges the extension consumes — the parts of the episode that are real show content. We store these (not break ranges) because the auto-seek logic is simpler with keep-ranges and the validated Gemini prompt's `--output show` mode emits this shape natively. | Round 3 |
+| **Episode cache** | The Firestore collection (`episodes/{videoId}`) that stores `showSegments` keyed by YouTube video ID. Lets the heavy Gemini call happen exactly once per episode. | Round 2 |
 | **Auto-skip** | The extension's runtime behavior: when the YouTube player's `currentTime` enters a known break range, programmatically seek to the range's `end`. | Round 2 |
 | **ASR** | Automatic Speech Recognition — converting audio to text. We do this server-side ourselves rather than relying on YouTube's auto-captions. | Round 2 |
 | **Whisper** | OpenAI's open-source multilingual ASR model. The `large-v3` variant is our leading candidate for transcribing Tunisian-dialect audio. | Round 2 |

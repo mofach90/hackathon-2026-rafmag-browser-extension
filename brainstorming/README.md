@@ -38,4 +38,4 @@ Cross-cutting:
 | 2 | Solution & name | ✅ done — backend & data ADRs drafted in [`../adr/`](../adr/) |
 | 3 | MVP scope | ✅ done — see [`04-scope.md`](./04-scope.md) |
 | 4 | Constraints | ✅ done — see [`05-constraints.md`](./05-constraints.md) |
-| 5 | Final review | ⏳ pending |
+| 5 | Final review | ✅ done — drift audit pass, ADRs synced with Round 4 cost decision, glossary updated for `showSegments` |
