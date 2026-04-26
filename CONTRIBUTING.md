@@ -61,17 +61,82 @@ uv sync
 uv run python backfill.py
 ```
 
-## Conventions
+## Git workflow
+
+We follow **Git Flow** branching with **Conventional Commits** messages and a standard PR template. Full reasoning in [`adr/0004-git-workflow.md`](./adr/0004-git-workflow.md).
+
+### Branches
+
+**Long-running:**
+
+- `main` — production. Tagged at every release.
+- `develop` — integration. Default branch.
+
+**Short-lived** (`<type>/<short-kebab-desc>`):
+
+| Type | Off | Into | Used for |
+|------|-----|------|----------|
+| `feature/*` | `develop` | `develop` | New user-visible feature |
+| `bugfix/*` | `develop` | `develop` | Non-urgent fix |
+| `docs/*` | `develop` | `develop` | Documentation only |
+| `chore/*` | `develop` | `develop` | Tooling / deps / config |
+| `release/v<x.y.z>` | `develop` | `main` AND `develop` | Release prep |
+| `hotfix/v<x.y.z>` | `main` | `main` AND `develop` | Emergency prod fix |
+
+### Merge strategy
+
+- **Squash merge** for `feature` / `bugfix` / `docs` / `chore` → linear history on `develop`.
+- **Merge commit** (no squash) for `release/*` / `hotfix/*` → preserves the release moment.
+
+### Commit messages — Conventional Commits
+
+```
+<type>(<scope>): <subject>
+
+<optional body>
+
+<optional footer>
+```
+
+**Types:** `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `style`, `ci`, `build`, `revert`.
+
+**Scopes:** `extension`, `backend`, `scripts`, `adr`, `brainstorming`, `experiments`. Add new scopes here as the codebase grows.
+
+**Rules:**
+
+- Subject in **imperative mood** (`add`, not `added`), no trailing period, ≤ 72 chars.
+- Body wrapped at 100 chars.
+- Breaking changes: append `!` after the scope and add a `BREAKING CHANGE:` footer.
+
+**Examples:**
+
+```
+feat(extension): auto-seek to first show segment on rafmag video load
+fix(backend): handle 404 when Firestore document missing
+docs(adr): add ADR 0004 for git workflow
+chore(scripts): bump google-genai to 0.8.4
+
+feat(extension)!: rename episodeSegments to showSegments
+
+BREAKING CHANGE: API now returns showSegments instead of episodeSegments.
+```
+
+### Pull requests
+
+Every change opens a PR. The description follows the template at [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md) — GitHub fills it in automatically. Required sections: **Why**, **What changed**, **Type**, **How to verify**, **Checklist**.
+
+Self-merge is allowed (one-person project), but the description still gets filled in — that's the durable "why" log.
+
+## Conventions still to lock
 
 The remaining conventions land in subsequent rounds:
 
-- **Git workflow** (branching, commits, PRs) — Round B
-- **Code style** (naming, formatter, linter) — Round C
-- **Testing** — Round D
-- **CI/CD** — Round E
-- **Docs & governance** — Round F
+- **Code style** (naming, formatter, linter, EditorConfig) — Round C
+- **Testing strategy** (unit / integration / e2e split, frameworks, coverage) — Round D
+- **CI/CD & automation** (GitHub Actions, pre-commit hooks, dependency updates) — Round E
+- **Docs & governance** (CHANGELOG, semver, CODEOWNERS, ADR cadence) — Round F
 
-This file gets updated as each round lands.
+This file is updated as each round lands.
 
 ## Adding a new architectural decision
 
