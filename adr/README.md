@@ -24,5 +24,6 @@ A useful rule of thumb: **if changing the decision would take more than a day to
 
 | #    | Title                                       | Status   |
 |------|---------------------------------------------|----------|
-| 0001 | [Backend stack](./0001-backend-stack.md)    | Proposed |
-| 0002 | [Data storage](./0002-data-storage.md)      | Proposed |
+| 0001 | [Backend stack](./0001-backend-stack.md)                              | Proposed |
+| 0002 | [Data storage](./0002-data-storage.md)                                | Proposed |
+| 0003 | [Tech stack and repo structure](./0003-tech-stack-and-repo-structure.md) | Accepted |
