@@ -1,0 +1,20 @@
+# Open questions
+
+> Things we haven't resolved yet. Each entry: the question, when it surfaced, and (when answered) where the answer lives.
+
+| # | Question | Surfaced in | Status | Answer / where it lives |
+|---|----------|-------------|--------|-------------------------|
+| 1 | How does the extension *detect* the start and end of an ad break? | Round 1 | ✅ resolved | Single Gemini call on the YouTube URL → JSON `{start,end}` ranges. Whisper kept as a fallback only. See [`03-solution.md`](./03-solution.md). |
+| 2 | Who triggers the first-time processing for a new episode? | Round 2 | ✅ resolved | PubSubHubbub feed catches stream going live → backend polls YouTube Data API for `actualEndTime` → process as soon as archive is ready. |
+| 3 | YouTube auto-captions vs our own ASR vs Gemini direct? | Round 2 | ✅ resolved | Gemini direct (it ingests YouTube URLs and returns timestamps natively). Whisper as fallback if Tunisian Derja quality is poor. |
+| 4 | Which LLM does the analysis? | Round 2 | ✅ resolved | **Gemini** (model TBD — likely 2.5 Flash for cost, 2.5 Pro if quality demands). See [`adr/0001-backend-stack.md`](../adr/0001-backend-stack.md). |
+| 5 | Where does the backend live? | Round 2 | ✅ resolved | **Cloud Functions Gen 2** (= Cloud Run + build pipeline). See [`adr/0001-backend-stack.md`](../adr/0001-backend-stack.md). |
+| 6 | What's the database? | Round 2 | ✅ resolved | **Firestore**. See [`adr/0002-data-storage.md`](../adr/0002-data-storage.md). |
+| 7 | The actual Gemini prompt for break / show-content detection in Tunisian dialect. | Round 2 | ✅ resolved | We use the **show-content prompt** already living in [`experiments/01-gemini-quality/test.py`](../experiments/01-gemini-quality/test.py) (`PROMPT_TEMPLATE` + `SHOW_OUTPUT_CONTEXT`, invoked with `--output show`). MVP returns *show* segments, not breaks. The backfill script reuses the same prompt unchanged. |
+| 8 | How does the extension know the current YouTube tab is a `rafmag` episode? Channel ID match? URL pattern? Backend lookup? | Round 2 | ✅ resolved | **Channel ID = Diwan FM AND title contains `rafmag` variant** (`rafmag`, `راف ماك`, common spellings). Then video-ID lookup against the backend. See [`04-scope.md`](./04-scope.md). |
+| 9 | What if Gemini's Tunisian-dialect quality on a real episode is too poor for break detection? Threshold for falling back to Whisper. | Round 2 | 🟡 provisionally accepted for MVP (pending real-run validation) | Grammar-grounded prompt in `test.py` is treated as good enough to proceed with Round 3 scope. Still need a clean regression run on the annotated episode `yaeWOrjiDRM` before flipping ADR 0001 from Proposed to Accepted. See [`experiments/02-show-grammar/grammar.md`](../experiments/02-show-grammar/grammar.md), [`experiments/01-gemini-quality/`](../experiments/01-gemini-quality/). |
+| 13 | Are ad breaks consistent in duration / structure across episodes? | Round 1 | ✅ resolved by experiment 02 | 4–6 breaks per episode; one ~15–20 min "mega break" at 8AM for station news/sports; rest are 1–6 min. Skeleton: Intro → Zapping → break → Trend → Mega Break → 2nd hour → Box News → break → Panel → break → Quiz → Outro. See [`grammar.md`](../experiments/02-show-grammar/grammar.md). |
+| 14 | Does the YouTube video include any chapter markers or description timestamps from the radio (free signal)? | Round 1 | ❌ no — confirmed during transcript collection; transcripts are auto-only, no description timestamps | — |
+| 10 | What if there's a false positive (skips real content) or false negative (misses a break)? Manual override / user feedback loop in the extension? | Round 2 | ⏸ deferred — out of MVP | Punted from MVP per Round 3. We need real-world FP/FN data before designing the override UI. Listed under stretch goals in [`04-scope.md`](./04-scope.md). |
+| 11 | Browser support: Firefox first — also Chrome / Edge later? Manifest V2 vs V3? | Round 1 | ⏳ open — Round 4 | — |
+| 12 | Cost ceiling per episode (Gemini call cost). Does the free tier comfortably cover hackathon-scale traffic? | Round 2 | ⏳ open — Round 4 | — |
