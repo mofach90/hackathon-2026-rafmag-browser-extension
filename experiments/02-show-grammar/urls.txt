@@ -1,0 +1,16 @@
+# Put one YouTube URL per line. Lines starting with # are ignored.
+# Aim for ~10 episodes with a mix of:
+#   - different guests / topics
+#   - at least 1–2 episodes that include the columnist / chroniqueur recap
+#   - at least one short and one long episode
+
+https://www.youtube.com/watch?v=h3n2BLlotEM
+https://www.youtube.com/watch?v=IwY1p4vO3M4
+https://www.youtube.com/watch?v=ATgHQZDqHEY&pp=0gcJCdQKAYcqIYzv
+https://www.youtube.com/watch?v=mhbW1DIq1Q0
+https://www.youtube.com/watch?v=0U5ek6-25ZA
+https://www.youtube.com/watch?v=r8XrQLQ5TYQ
+https://www.youtube.com/watch?v=yaeWOrjiDRM
+https://www.youtube.com/watch?v=OMQ47PuT04I
+https://www.youtube.com/watch?v=NkHZdVwQQRM
+https://www.youtube.com/watch?v=C5f12KL93Mk

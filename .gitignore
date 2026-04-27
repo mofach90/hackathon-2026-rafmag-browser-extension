@@ -1,1 +1,16 @@
 .claude/
+
+# Environment / secrets — never commit
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Experiment outputs (keep README, drop run artifacts)
+experiments/**/result.json
+experiments/**/transcripts/
