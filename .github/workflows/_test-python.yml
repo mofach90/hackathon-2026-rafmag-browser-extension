@@ -1,0 +1,80 @@
+# Reusable workflow: Python lint + tests + coverage gate.
+# Called by per-component callers (backend.yml, scripts.yml).
+# See adr/0007-ci-cd-and-automation.md.
+
+name: Reusable Python tests
+
+on:
+  workflow_call:
+    inputs:
+      project-path:
+        description: "Path to the Python project (e.g. backend, scripts)"
+        required: true
+        type: string
+      python-version:
+        description: "Python version to install"
+        required: false
+        type: string
+        default: "3.12"
+      coverage-threshold:
+        description: "Minimum line coverage % required (Round D: 80)"
+        required: false
+        type: number
+        default: 80
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ inputs.project-path }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "${{ inputs.project-path }}/uv.lock"
+
+      # Inputs in run: blocks go through env vars to follow GitHub's
+      # workflow-injection guidance (even when the input is set by our own
+      # caller workflow rather than untrusted user input).
+      - name: Set up Python
+        working-directory: ${{ inputs.project-path }}
+        env:
+          PYTHON_VERSION: ${{ inputs.python-version }}
+        run: uv python install "$PYTHON_VERSION"
+
+      - name: Sync dependencies (frozen)
+        working-directory: ${{ inputs.project-path }}
+        run: uv sync --frozen
+
+      - name: Lint (ruff check)
+        working-directory: ${{ inputs.project-path }}
+        run: uv run ruff check .
+
+      - name: Format check (ruff format --check)
+        working-directory: ${{ inputs.project-path }}
+        run: uv run ruff format --check .
+
+      - name: Run tests with coverage
+        working-directory: ${{ inputs.project-path }}
+        env:
+          COVERAGE_THRESHOLD: ${{ inputs.coverage-threshold }}
+        run: |
+          uv run pytest \
+            --cov \
+            --cov-report=term-missing \
+            --cov-report=xml \
+            --cov-fail-under="$COVERAGE_THRESHOLD"
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ inputs.project-path }}
+          path: ${{ inputs.project-path }}/coverage.xml
+          retention-days: 7

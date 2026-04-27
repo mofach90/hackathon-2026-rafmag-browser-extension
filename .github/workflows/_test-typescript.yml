@@ -1,0 +1,73 @@
+# Reusable workflow: TypeScript format check + lint + type-check + tests + coverage gate.
+# Called by per-component callers (extension.yml).
+# See adr/0007-ci-cd-and-automation.md.
+#
+# All ${{ }} interpolations are in structural fields (working-directory, with:,
+# cache-dependency-path, node-version, name) — never inside `run:` shell — so
+# the workflow-injection class doesn't apply here.
+
+name: Reusable TypeScript tests
+
+on:
+  workflow_call:
+    inputs:
+      project-path:
+        description: "Path to the TS project (e.g. extension)"
+        required: true
+        type: string
+      node-version:
+        description: "Node version to install"
+        required: false
+        type: string
+        default: "20"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ inputs.project-path }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+          cache-dependency-path: ${{ inputs.project-path }}/pnpm-lock.yaml
+
+      - name: Install dependencies (frozen)
+        working-directory: ${{ inputs.project-path }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Format check (prettier)
+        working-directory: ${{ inputs.project-path }}
+        run: pnpm exec prettier --check .
+
+      - name: Lint (eslint)
+        working-directory: ${{ inputs.project-path }}
+        run: pnpm exec eslint .
+
+      - name: Type-check (tsc --noEmit)
+        working-directory: ${{ inputs.project-path }}
+        run: pnpm exec tsc --noEmit
+
+      - name: Run tests with coverage
+        working-directory: ${{ inputs.project-path }}
+        # Coverage threshold (>=80%) enforced by vitest config:
+        # coverage.thresholds.lines = 80 (Round D / ADR 0006).
+        run: pnpm exec vitest run --coverage
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ inputs.project-path }}
+          path: ${{ inputs.project-path }}/coverage
+          retention-days: 7

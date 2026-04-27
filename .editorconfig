@@ -1,0 +1,27 @@
+# Editor-agnostic baseline. https://editorconfig.org
+# Read by Zed, VS Code, JetBrains, vim, neovim, Emacs, Sublime, GitHub web view, etc.
+# See adr/0005-code-conventions.md for the why.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+[*.{json,jsonc,yml,yaml,toml}]
+indent_size = 2
+
+# Markdown: two trailing spaces are a hard line break (<br>) — must preserve.
+[*.md]
+trim_trailing_whitespace = false
+
+# Make requires hard tabs in recipe lines.
+[Makefile]
+indent_style = tab
