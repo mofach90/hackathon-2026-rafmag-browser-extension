@@ -1,0 +1,79 @@
+# Reusable workflow: Playwright Firefox e2e for the built extension.
+# Called by extension.yml on every PR to develop / main.
+# See adr/0006-testing-strategy.md (e2e) and adr/0007-ci-cd-and-automation.md.
+#
+# All ${{ }} interpolations sit in structural fields (working-directory,
+# cache-dependency-path, env, with:, environment) — never inside `run:` shell.
+# The GEMINI_API_KEY_DEV secret reaches the test process via env, not via
+# string interpolation in the run script.
+
+name: Reusable Playwright e2e (Firefox)
+
+on:
+  workflow_call:
+    inputs:
+      extension-path:
+        description: "Path to the extension project"
+        required: true
+        type: string
+      node-version:
+        description: "Node version to install"
+        required: false
+        type: string
+        default: "20"
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: e2e (firefox)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: dev # reads dev secrets only — never prod
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: pnpm
+          cache-dependency-path: ${{ inputs.extension-path }}/pnpm-lock.yaml
+
+      - name: Install dependencies (frozen)
+        working-directory: ${{ inputs.extension-path }}
+        run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-firefox-${{ runner.os }}-${{ hashFiles(format('{0}/pnpm-lock.yaml', inputs.extension-path)) }}
+
+      - name: Install Playwright Firefox + system deps
+        working-directory: ${{ inputs.extension-path }}
+        run: pnpm exec playwright install --with-deps firefox
+
+      - name: Build extension (production bundle)
+        working-directory: ${{ inputs.extension-path }}
+        run: pnpm build
+
+      - name: Run Playwright e2e (Firefox)
+        working-directory: ${{ inputs.extension-path }}
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_DEV }}
+        run: pnpm exec playwright test
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: ${{ inputs.extension-path }}/playwright-report
+          retention-days: 7

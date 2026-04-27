@@ -127,14 +127,111 @@ Every change opens a PR. The description follows the template at [`.github/PULL_
 
 Self-merge is allowed (one-person project), but the description still gets filled in — that's the durable "why" log.
 
+## Code conventions
+
+Full reasoning in [`adr/0005-code-conventions.md`](./adr/0005-code-conventions.md).
+
+### Formatters & linters
+
+| Language   | Formatter      | Linter       | Config                                  |
+|------------|----------------|--------------|-----------------------------------------|
+| Python     | `ruff format`  | `ruff check` | `pyproject.toml`                        |
+| TypeScript | `prettier`     | `eslint`     | `.prettierrc` + `eslint.config.js`      |
+
+Format-on-save is pinned in [`.zed/settings.json`](./.zed/settings.json) for Zed users. Non-Zed editors pick up the indent / line-ending baseline from [`.editorconfig`](./.editorconfig) and the language-level configs from each project.
+
+### Naming
+
+| Concept                | Python                       | TypeScript          |
+|------------------------|------------------------------|---------------------|
+| Variables / functions  | `snake_case`                 | `camelCase`         |
+| Classes / types        | `PascalCase`                 | `PascalCase`        |
+| Constants              | `UPPER_SNAKE_CASE`           | `UPPER_SNAKE_CASE`  |
+| File names             | `snake_case.py`              | `kebab-case.ts`     |
+| Folder names           | `kebab-case`                 | `kebab-case`        |
+| Test files             | `test_<module>.py`           | `<module>.test.ts`  |
+| Private members        | `_leading_underscore`        | `#privateField`     |
+
+### Editor baseline
+
+[`.editorconfig`](./.editorconfig) at the repo root sets UTF-8, LF line endings, final newline, trim trailing whitespace, and per-language indentation (4-space Python / 2-space TS / JSON / YAML / TOML; tabs preserved in `Makefile`; trailing whitespace preserved in `*.md` because it encodes `<br>`).
+
+## Testing
+
+Full reasoning in [`adr/0006-testing-strategy.md`](./adr/0006-testing-strategy.md).
+
+### Pyramid shape (per component)
+
+| Component | Unit | Integration | E2E |
+|-----------|------|-------------|-----|
+| `extension/` | **Heavy** — pure logic | Light — DOM via `happy-dom` | Playwright + real Firefox |
+| `backend/`   | Medium               | **Heavy** — Firebase Emulator + Gemini fixtures | Sparse smoke per release |
+| `scripts/`   | Medium               | **Heavy** — Firebase Emulator + fake input | N/A |
+
+### Frameworks
+
+| Layer | Tool |
+|-------|------|
+| TS unit + component | Vitest (with `happy-dom` for DOM tests) |
+| TS extension e2e | Playwright (Firefox) |
+| Python unit + integration | pytest + `pytest-asyncio` |
+| Firestore in tests | Firebase Emulator Suite |
+| Gemini in tests | Recorded fixtures (`vcrpy` or hand-rolled JSON) |
+
+### Coverage
+
+Hard **≥80% line coverage** gate in CI per project. Allowed exclusions: pure entry-point glue, defensive `assert`s, type-only stubs. Not allowed: business logic, error handling on the happy path, prompt construction, response parsing. Exclusions live in tool config with a one-line "why."
+
+## CI/CD & automation
+
+Full reasoning in [`adr/0007-ci-cd-and-automation.md`](./adr/0007-ci-cd-and-automation.md).
+
+### Pre-commit hooks
+
+After cloning, run once:
+
+```bash
+pre-commit install                        # main hooks
+pre-commit install --hook-type commit-msg # Conventional Commits validator
+```
+
+Hooks: file hygiene + ruff (Python format/lint) + gitleaks (secret scanning) + conventional-pre-commit (commit message format). Prettier and eslint hooks are wired as local hooks once `extension/` scaffolds.
+
+### CI workflows
+
+Located in `.github/workflows/`. Reusable workflows + per-component callers:
+
+- `_test-python.yml` — uv sync → ruff → pytest with ≥80% coverage gate
+- `_test-typescript.yml` — pnpm install → prettier → eslint → tsc → vitest with ≥80% coverage gate
+- `_e2e.yml` — Playwright Firefox e2e on the built extension
+- `commitlint.yml` — validates PR commits against Conventional Commits + scope enum
+- `extension.yml` / `backend.yml` / `scripts.yml` — caller workflows (added when each component scaffolds)
+- `release.yml` — semantic-release on `main` (Round F)
+
+### Dependency updates
+
+[Renovate](https://docs.renovatebot.com) configured at [`.github/renovate.json5`](./.github/renovate.json5). Schedule: Mondays before 9am Europe/Paris. Minor + patch grouped per ecosystem. Patch updates auto-merge after CI green; majors require manual review.
+
+### Secrets
+
+Two GitHub Environments configured at the repo level:
+
+| Environment | Used by | Protection |
+|-------------|---------|------------|
+| `dev` | Test workflows, e2e | None (any workflow can read) |
+| `prod` | `release.yml` only | Required reviewer = repo owner |
+
+Prod secrets (`GEMINI_API_KEY_PROD`, AMO publishing keys, prod Firebase service account) are unreachable from anything but the release workflow.
+
+### Branch protection
+
+`main` and `develop` both require: PR before merge, all status checks pass, branch up-to-date, no direct push, no force push. Required checks: per-component `test (...)` jobs, `e2e (firefox)`, `commitlint`. Configured via GitHub repo settings (settings reproduced in the ADR).
+
 ## Conventions still to lock
 
 The remaining conventions land in subsequent rounds:
 
-- **Code style** (naming, formatter, linter, EditorConfig) — Round C
-- **Testing strategy** (unit / integration / e2e split, frameworks, coverage) — Round D
-- **CI/CD & automation** (GitHub Actions, pre-commit hooks, dependency updates) — Round E
-- **Docs & governance** (CHANGELOG, semver, CODEOWNERS, ADR cadence) — Round F
+- **Docs & governance** (CHANGELOG, semver, CODEOWNERS, ADR cadence, release.yml workflow) — Round F
 
 This file is updated as each round lands.
 

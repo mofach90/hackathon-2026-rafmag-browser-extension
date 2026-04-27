@@ -28,3 +28,6 @@ A useful rule of thumb: **if changing the decision would take more than a day to
 | 0002 | [Data storage](./0002-data-storage.md)                                | Proposed |
 | 0003 | [Tech stack and repo structure](./0003-tech-stack-and-repo-structure.md) | Accepted |
 | 0004 | [Git workflow](./0004-git-workflow.md)                                | Accepted |
+| 0005 | [Code conventions](./0005-code-conventions.md)                        | Accepted |
+| 0006 | [Testing strategy](./0006-testing-strategy.md)                        | Accepted |
+| 0007 | [CI/CD & automation](./0007-ci-cd-and-automation.md)                  | Accepted |

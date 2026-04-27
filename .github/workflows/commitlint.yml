@@ -1,0 +1,42 @@
+name: Commitlint
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  commitlint:
+    name: Validate PR commits
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install commitlint
+        run: |
+          npm install --no-save \
+            @commitlint/cli@^19 \
+            @commitlint/config-conventional@^19
+
+      # Use env vars (not direct ${{ }} in run:) per GitHub's workflow-injection
+      # guidance, even though SHAs are GitHub-validated 40-char hex strings.
+      - name: Validate commits in PR
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          npx commitlint \
+            --from "$BASE_SHA" \
+            --to "$HEAD_SHA" \
+            --verbose

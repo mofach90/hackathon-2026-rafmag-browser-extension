@@ -1,0 +1,57 @@
+{
+  "format_on_save": "on",
+  "tab_size": 2,
+  "hard_tabs": false,
+  "ensure_final_newline_on_save": true,
+  "remove_trailing_whitespace_on_save": true,
+  "languages": {
+    "Python": {
+      "tab_size": 4,
+      "code_actions_on_format": {
+        "source.organizeImports.ruff": true,
+        "source.fixAll.ruff": true
+      },
+      "formatter": {
+        "language_server": {
+          "name": "ruff"
+        }
+      }
+    },
+    "TypeScript": {
+      "tab_size": 2,
+      "formatter": "prettier",
+      "code_actions_on_format": {
+        "source.fixAll.eslint": true
+      }
+    },
+    "TSX": {
+      "tab_size": 2,
+      "formatter": "prettier",
+      "code_actions_on_format": {
+        "source.fixAll.eslint": true
+      }
+    },
+    "JavaScript": {
+      "tab_size": 2,
+      "formatter": "prettier",
+      "code_actions_on_format": {
+        "source.fixAll.eslint": true
+      }
+    },
+    "JSON": {
+      "tab_size": 2,
+      "formatter": "prettier"
+    },
+    "JSONC": {
+      "tab_size": 2,
+      "formatter": "prettier"
+    },
+    "YAML": {
+      "tab_size": 2,
+      "formatter": "prettier"
+    },
+    "Markdown": {
+      "format_on_save": "off"
+    }
+  }
+}
