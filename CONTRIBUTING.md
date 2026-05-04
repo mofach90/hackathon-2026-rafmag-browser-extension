@@ -283,19 +283,42 @@ These are owner-side ops, not in code. Track them in the repo's launch checklist
 3. **Generate AMO API JWT credentials** at [https://addons.mozilla.org/developers/addon/api/key/](https://addons.mozilla.org/developers/addon/api/key/). Store as `AMO_JWT_ISSUER` + `AMO_JWT_SECRET` in the **`prod`** GitHub Environment.
 4. **Verify** by pushing a `feat:` commit to `main` (after `extension/` scaffolds): release job tags + opens a release; publish-amo job pauses for your approval click.
 
-## Conventions still to lock
+## Governance
 
-The remaining conventions land in subsequent rounds:
+Full reasoning in [`adr/0009-governance.md`](./adr/0009-governance.md).
 
-- **Governance** (CODEOWNERS, ADR cadence + amendment policy) — Round F.3 + F.4
+### Code ownership
 
-This file is updated as each round lands.
+[`.github/CODEOWNERS`](./.github/CODEOWNERS) auto-requests review on every PR touching matching paths. Today every line names `@mofach90`; the *shape* (path-scoped, default-then-overrides) is what's load-bearing for when a second contributor joins.
+
+Branch protection on `main` and `develop` requires CODEOWNER review. To allow self-merge while there's only one contributor, `@mofach90` is configured as a *bypass actor* for the "Require pull request" rule on `main` only. When a second contributor joins, the bypass actor is removed and the rule becomes load-bearing without any code change.
+
+### License
+
+[`LICENSE`](./LICENSE) — **proprietary, all rights reserved**. The repo is publicly visible on GitHub for portfolio / hackathon-review purposes; the code itself is not freely usable, modifiable, or redistributable without explicit written permission.
+
+External contributions are not accepted by default — a CLA or explicit license grant would need to be in place first. AMO publishing of proprietary extensions is permitted by Mozilla; the listing copy must not describe the extension as "open source."
+
+### ADR amendment policy
+
+| Status | Meaning |
+|---|---|
+| Proposed | Under discussion. Codebase doesn't yet reflect it. |
+| Accepted | Locked. Codebase reflects it. |
+| Superseded by ADR-00XX | Replaced by a newer ADR (number filled in). Both stay in the index. |
+| Deprecated | No longer relevant, no replacement. Rare. |
+
+**Edit in place** (commit directly to the existing ADR file): typos, broken links, formatting, status-field flips, additions to **When we'd revisit**, factual additions to **Context**.
+
+**Must supersede** (write a new ADR, flip the old to `Superseded by ADR-00NN`): any change to **Decision**, **Alternatives considered**, or **Consequences**.
+
+ADRs are revisited when a "When we'd revisit" trigger fires — no scheduled cadence. Numbering is gapless and never reused; superseded ADRs keep their number.
 
 ## Adding a new architectural decision
 
 1. Copy `adr/_template.md` → `adr/00NN-short-title.md`.
 2. Fill it in. Set `Status: Proposed`.
 3. Add a row to `adr/README.md`.
-4. When the decision is locked, flip `Status` to `Accepted`.
+4. When the decision is locked, flip `Status` to `Accepted`. (To *change* a previously-Accepted decision, see the ADR amendment policy in **Governance** above — most changes require a new ADR, not an edit.)
 
 See `adr/README.md` for the rule of thumb on what deserves an ADR.

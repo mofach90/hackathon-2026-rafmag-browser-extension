@@ -9,7 +9,7 @@ Months from now, when someone (you included) asks *"why did we pick Firestore?"*
 ## What belongs here vs in `brainstorming/`
 
 - **`brainstorming/`** is exploration — open questions, ideas being weighed, things still in flux. Edit it freely.
-- **`adr/`** is the commitment — once a decision is made, it gets an ADR. ADRs are **append-only**: you don't rewrite an old ADR when you change your mind, you write a new one that says *"supersedes ADR-000X"*.
+- **`adr/`** is the commitment — once a decision is made, it gets an ADR. ADRs are **append-only**: you don't rewrite an old ADR when you change your mind, you write a new one that says *"supersedes ADR-000X"*. The exact edit-vs-supersede line is locked in [ADR 0009](./0009-governance.md).
 
 A useful rule of thumb: **if changing the decision would take more than a day to undo, write an ADR**. If it'd take an hour, don't.
 
@@ -32,3 +32,4 @@ A useful rule of thumb: **if changing the decision would take more than a day to
 | 0006 | [Testing strategy](./0006-testing-strategy.md)                        | Accepted |
 | 0007 | [CI/CD & automation](./0007-ci-cd-and-automation.md)                  | Accepted |
 | 0008 | [Release pipeline](./0008-release-pipeline.md)                        | Accepted |
+| 0009 | [Governance: CODEOWNERS, amendment policy, license](./0009-governance.md) | Accepted |
