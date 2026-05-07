@@ -206,7 +206,7 @@ Located in `.github/workflows/`. Reusable workflows + per-component callers:
 - `_e2e.yml` — Playwright Firefox e2e on the built extension
 - `commitlint.yml` — validates PR commits against Conventional Commits + scope enum
 - `extension.yml` / `backend.yml` / `scripts.yml` — caller workflows (added when each component scaffolds)
-- `release.yml` — semantic-release on `main` (Round F)
+- `release.yml` — semantic-release on `main` push → AMO auto-publish (shape locked in ADR 0008; file ships when `extension/` scaffolds)
 
 ### Dependency updates
 
@@ -227,11 +227,67 @@ Prod secrets (`GEMINI_API_KEY_PROD`, AMO publishing keys, prod Firebase service 
 
 `main` and `develop` both require: PR before merge, all status checks pass, branch up-to-date, no direct push, no force push. Required checks: per-component `test (...)` jobs, `e2e (firefox)`, `commitlint`. Configured via GitHub repo settings (settings reproduced in the ADR).
 
+## Releasing
+
+Full reasoning in [`adr/0008-release-pipeline.md`](./adr/0008-release-pipeline.md).
+
+### Versioning
+
+- **Single repo SemVer.** One version stream, declared in `extension/package.json`.
+- WXT auto-derives `extension/manifest.json` `version` from `package.json` at build time.
+- `backend/` and `scripts/` use the **git tag** as their version — no in-file bump.
+
+### Release flow
+
+```
+merge to main
+   ↓
+release.yml CI gate (re-runs _test-typescript + _e2e)
+   ↓
+release job (env: dev)
+   • semantic-release reads conventional commits since last tag
+   • bumps extension/package.json
+   • writes /CHANGELOG.md
+   • commits back to main via GitHub App token
+   • creates v<x.y.z> tag + GitHub Release
+   ↓
+publish-amo job (env: prod) — paused until required reviewer approves
+   • signs + uploads .xpi to AMO listed channel
+```
+
+### Conventional Commits drive everything
+
+The release version is computed from commit types since the last tag:
+
+| Commit type prefix | Bump |
+|--------------------|------|
+| `fix:` | patch (`1.4.0` → `1.4.1`) |
+| `feat:` | minor (`1.4.0` → `1.5.0`) |
+| any commit with `BREAKING CHANGE:` footer or `!` after scope | major (`1.4.0` → `2.0.0`) |
+| `chore:`, `docs:`, `test:`, `style:`, `refactor:`, `ci:`, `build:` | no release |
+
+If no commit warrants a release since the last tag, semantic-release exits cleanly with no tag.
+
+### Manual override — skipping a release
+
+To merge without triggering a release, put `[skip release]` in the merge commit body, or land the change with only `chore:`/`docs:`/`test:` types.
+
+### One-time operational setup (before the first release)
+
+These are owner-side ops, not in code. Track them in the repo's launch checklist:
+
+1. **Create a GitHub App** named `rafmag-release-bot`, install on this repo only.
+   - Permissions: `Contents: Read & Write`, `Pull requests: Read`, `Issues: Read & Write`.
+   - Generate a private key (PEM); store the App ID + PEM in the **`dev`** GitHub Environment as `RELEASE_BOT_APP_ID` + `RELEASE_BOT_PRIVATE_KEY`.
+2. **Configure the `main` branch ruleset** to allow this App as a *bypass actor* for the "Require pull request" rule. Without this, semantic-release's commit-back fails.
+3. **Generate AMO API JWT credentials** at [https://addons.mozilla.org/developers/addon/api/key/](https://addons.mozilla.org/developers/addon/api/key/). Store as `AMO_JWT_ISSUER` + `AMO_JWT_SECRET` in the **`prod`** GitHub Environment.
+4. **Verify** by pushing a `feat:` commit to `main` (after `extension/` scaffolds): release job tags + opens a release; publish-amo job pauses for your approval click.
+
 ## Conventions still to lock
 
 The remaining conventions land in subsequent rounds:
 
-- **Docs & governance** (CHANGELOG, semver, CODEOWNERS, ADR cadence, release.yml workflow) — Round F
+- **Governance** (CODEOWNERS, ADR cadence + amendment policy) — Round F.3 + F.4
 
 This file is updated as each round lands.
 

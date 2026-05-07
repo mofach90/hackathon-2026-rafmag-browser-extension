@@ -31,3 +31,4 @@ A useful rule of thumb: **if changing the decision would take more than a day to
 | 0005 | [Code conventions](./0005-code-conventions.md)                        | Accepted |
 | 0006 | [Testing strategy](./0006-testing-strategy.md)                        | Accepted |
 | 0007 | [CI/CD & automation](./0007-ci-cd-and-automation.md)                  | Accepted |
+| 0008 | [Release pipeline](./0008-release-pipeline.md)                        | Accepted |
