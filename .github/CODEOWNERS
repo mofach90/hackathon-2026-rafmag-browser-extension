@@ -1,0 +1,25 @@
+# CODEOWNERS — auto-requests review on PRs touching matching paths.
+# Reasoning + edit-vs-supersede policy: see adr/0009-governance.md.
+# Pattern reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/managing-repository-settings/about-code-owners
+#
+# Last match wins. Order matters: defaults first, overrides below.
+
+# Default owner — every file unless overridden below
+*                       @mofach90
+
+# Architecture decisions
+/adr/                   @mofach90
+
+# CI/CD + repo config
+/.github/               @mofach90
+
+# Component code
+/extension/             @mofach90
+/backend/               @mofach90
+/scripts/               @mofach90
+
+# Top-level governance documents
+/CONTRIBUTING.md        @mofach90
+/README.md              @mofach90
+/CODEOWNERS             @mofach90
+/LICENSE                @mofach90
